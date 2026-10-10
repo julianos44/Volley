@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tournoi 8 équipes – par terrain</title>
+<style>
+:root{--bg:#f6f7fb;--card:#fff;--tx:#1b1f2a;--mut:#6b7280;--ac:#4f46e5;--ln:#e5e7eb;--win:#16a34a;--t1:#4f46e5;--t2:#0d9488;--t3:#ea580c;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1220;--card:#1a1e30;--tx:#eef0f7;--mut:#9aa1b5;--ac:#818cf8;--ln:#2b3050;--win:#4ade80;--t1:#818cf8;--t2:#2dd4bf;--t3:#fb923c}}
+:root[data-theme="dark"]{--bg:#0f1220;--card:#1a1e30;--tx:#eef0f7;--mut:#9aa1b5;--ac:#818cf8;--ln:#2b3050;--win:#4ade80;--t1:#818cf8;--t2:#2dd4bf;--t3:#fb923c}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:640px;margin:0 auto;padding:16px 14px 40px}
+h1{font-size:22px;margin:4px 0 2px}
+.sub{color:var(--mut);font-size:14px;margin-bottom:14px}
+.tabs{display:flex;gap:4px;background:var(--ln);padding:4px;border-radius:12px;margin-bottom:14px}
+.tabs button{flex:1;border:0;background:none;color:var(--mut);padding:10px 2px;border-radius:9px;font:600 14px inherit;font-family:inherit;cursor:pointer}
+.tabs button.on{background:var(--card);color:var(--c,var(--ac));box-shadow:0 1px 3px #0002}
+.prog{height:8px;background:var(--ln);border-radius:9px;overflow:hidden;margin-bottom:6px}
+.prog i{display:block;height:100%;background:var(--ac);width:0;transition:width .3s}
+.pt{font-size:13px;color:var(--mut);margin-bottom:14px}
+.ter{background:var(--card);border-radius:14px;padding:12px;border:1px solid var(--ln);border-top:5px solid var(--c)}
+.ter h2{font-size:17px;margin:0 0 6px;color:var(--c);display:flex;justify-content:space-between}
+.ter h2 span{color:var(--mut);font-weight:500;font-size:13px}
+.m{display:grid;grid-template-columns:40px 1fr 52px 14px 52px 1fr;align-items:center;gap:6px;padding:8px 0;border-top:1px solid var(--ln)}
+.n{font-size:11px;color:var(--mut);line-height:1.2;text-align:center}
+.n b{display:block;font-size:13px;color:var(--c)}
+.t{font-weight:700;font-size:17px;text-align:center;padding:6px 0;border-radius:8px;background:var(--bg)}
+.t.w{background:var(--win);color:#fff}
+.sep{text-align:center;color:var(--mut)}
+input{width:100%;padding:8px 2px;font:700 18px inherit;font-family:inherit;text-align:center;border:1.5px solid var(--ln);border-radius:8px;background:var(--bg);color:var(--tx)}
+input:focus{outline:0;border-color:var(--c,var(--ac))}
+table{width:100%;border-collapse:collapse;background:var(--card);border-radius:14px;overflow:hidden;font-size:14px}
+th,td{padding:10px 6px;text-align:center}
+th{font-size:12px;color:var(--mut);background:var(--card);border-bottom:2px solid var(--ln)}
+td{border-top:1px solid var(--ln)}
+td.eq{font-weight:800;font-size:17px;text-align:left;padding-left:12px}
+td.p{font-weight:800;color:var(--ac)}
+tr.r1 td.eq::before{content:"🥇 "}tr.r2 td.eq::before{content:"🥈 "}tr.r3 td.eq::before{content:"🥉 "}
+.wrap{overflow-x:auto;border-radius:14px}
+.note{font-size:12px;color:var(--mut);margin-top:8px}
+.rs{margin-top:18px;width:100%;padding:11px;border:1.5px solid var(--ln);background:none;color:var(--mut);border-radius:10px;font:600 14px inherit;font-family:inherit;cursor:pointer}
+.hide{display:none}
+</style>
+</head>
+<body>
+<main>
+<h1>🏆 Tournoi – 8 équipes</h1>
+<div class="sub">Chaque équipe rencontre toutes les autres · 3 terrains · 10 créneaux · 28 matchs</div>
+<div class="tabs" id="tabs"></div>
+<div class="prog"><i id="bar"></i></div>
+<div class="pt" id="pt"></div>
+<div id="views"></div>
+<button class="rs" id="rs">Réinitialiser les scores</button>
+</main>
+<script>
+var T="ABCDEFGH".split(""),KEY="tournoi8-terrains",S={},list=[];
+try{S=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){S={}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+// Calendrier : méthode du cercle, puis répartition en créneaux de 3 matchs (aucune équipe ne joue 2 fois en même temps)
+for(var r=0;r<7;r++){var rot=T.slice(1),k=r;while(k--)rot.unshift(rot.pop());var arr=[T[0]].concat(rot);for(var i=0;i<4;i++)list.push([arr[i],arr[7-i]])}
+var rem=list.slice(),slots=[];
+while(rem.length){var used={},s=[];for(var i=0;i<rem.length&&s.length<3;){var m=rem[i];if(!used[m[0]]&&!used[m[1]]){used[m[0]]=used[m[1]]=1;s.push(m);rem.splice(i,1)}else i++}slots.push(s)}
+var id=0,ter=[[],[],[]],all=[];
+slots.forEach(function(s,si){s.forEach(function(m,ti){var o={id:++id,a:m[0],b:m[1],c:si+1,t:ti};ter[ti].push(o);all.push(o)})});
+var views=document.getElementById("views"),tabs=document.getElementById("tabs");
+ter.forEach(function(ms,ti){
+  var col="var(--t"+(ti+1)+")",d=document.createElement("div");
+  d.className="ter"+(ti?" hide":"");d.id="v"+ti;d.style.setProperty("--c",col);
+  d.innerHTML="<h2>Terrain "+(ti+1)+"<span>"+ms.length+" matchs</span></h2>";
+  ms.forEach(function(m){
+    var s=S[m.id]||["",""],row=document.createElement("div");row.className="m";row.id="m"+m.id;
+    row.innerHTML='<div class="n"><b>C'+m.c+'</b>#'+m.id+'</div><div class="t" data-s="a">'+m.a+'</div><input inputmode="numeric" type="number" min="0" aria-label="Score '+m.a+'" value="'+s[0]+'"><span class="sep">–</span><input inputmode="numeric" type="number" min="0" aria-label="Score '+m.b+'" value="'+s[1]+'"><div class="t" data-s="b">'+m.b+'</div>';
+    row.querySelectorAll("input").forEach(function(inp,ix){inp.addEventListener("input",function(){
+      var v=S[m.id]||["",""];v[ix]=inp.value;
+      if(v[0]===""&&v[1]==="")delete S[m.id];else S[m.id]=v;
+      save();upd()})});
+    d.appendChild(row)
+  });
+  views.appendChild(d);
+  var b=document.createElement("button");b.textContent="Terrain "+(ti+1);b.style.setProperty("--c",col);
+  b.onclick=function(){tab(ti)};tabs.appendChild(b)
+});
+var cl=document.createElement("div");cl.id="v3";cl.className="hide";
+cl.innerHTML='<div class="wrap"><table><thead><tr><th style="text-align:left;padding-left:12px">Éq.</th><th>Pts</th><th>J</th><th>G</th><th>N</th><th>P</th><th>BP</th><th>BC</th><th>+/−</th></tr></thead><tbody id="tb"></tbody></table></div><div class="note">Victoire 3 pts · Nul 1 pt · Défaite 0. Départage : différence de buts, puis buts marqués.<br>C = créneau (les 3 matchs d\'un même créneau se jouent en même temps).</div>';
+views.appendChild(cl);
+var cb=document.createElement("button");cb.textContent="Classement";cb.onclick=function(){tab(3)};tabs.appendChild(cb);
+function tab(a){
+  for(var i=0;i<4;i++){document.getElementById("v"+i).classList.toggle("hide",i!==a);tabs.children[i].classList.toggle("on",i===a)}
+}
+function done(v){return v&&v[0]!==""&&v[1]!==""}
+function upd(){
+  var st={},n=0;
+  T.forEach(function(t){st[t]={t:t,p:0,j:0,g:0,n:0,d:0,bp:0,bc:0}});
+  all.forEach(function(m){
+    var v=S[m.id],row=document.getElementById("m"+m.id),ta=row.querySelector('[data-s="a"]'),tb=row.querySelector('[data-s="b"]');
+    ta.classList.remove("w");tb.classList.remove("w");
+    if(!done(v))return;n++;
+    var x=+v[0],y=+v[1],A=st[m.a],B=st[m.b];
+    A.j++;B.j++;A.bp+=x;A.bc+=y;B.bp+=y;B.bc+=x;
+    if(x>y){A.g++;A.p+=3;B.d++;ta.classList.add("w")}
+    else if(y>x){B.g++;B.p+=3;A.d++;tb.classList.add("w")}
+    else{A.n++;B.n++;A.p++;B.p++}
+  });
+  document.getElementById("bar").style.width=(n/28*100)+"%";
+  document.getElementById("pt").textContent=n+" / 28 matchs joués";
+  var L=Object.keys(st).map(function(k){return st[k]});
+  L.sort(function(a,b){return b.p-a.p||(b.bp-b.bc)-(a.bp-a.bc)||b.bp-a.bp||a.t.localeCompare(b.t)});
+  document.getElementById("tb").innerHTML=L.map(function(e,i){
+    var df=e.bp-e.bc;
+    return '<tr class="'+(n&&i<3?"r"+(i+1):"")+'"><td class="eq">'+e.t+'</td><td class="p">'+e.p+'</td><td>'+e.j+'</td><td>'+e.g+'</td><td>'+e.n+'</td><td>'+e.d+'</td><td>'+e.bp+'</td><td>'+e.bc+'</td><td>'+(df>0?"+":"")+df+'</td></tr>'
+  }).join("")
+}
+document.getElementById("rs").onclick=function(){
+  if(!confirm("Effacer tous les scores ?"))return;
+  S={};save();
+  document.querySelectorAll("input").forEach(function(i){i.value=""});upd()
+};
+tab(0);upd();
+</script>
+</body>
+</html>
